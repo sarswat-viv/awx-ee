@@ -2,12 +2,12 @@ FROM quay.io/ansible/awx-ee:24.6.1
 
 USER root
 
-# Install Azure Ansible Collection into system-wide path readable by USER 1000
-RUN ansible-galaxy collection install azure.azcollection \
+# Install Python 3.9-compatible Azure Ansible Collection into system-wide path
+RUN ansible-galaxy collection install "azure.azcollection:==3.1.0" \
     -p /usr/share/ansible/collections --force && \
     chmod -R a+rX /usr/share/ansible/collections
 
-# Install Azure Python SDKs
+# Ensure Azure Python SDKs are present (without pulling Python 3.10+ requirements.txt)
 RUN pip3 install --no-cache-dir \
     packaging \
     azure-identity \
@@ -16,8 +16,7 @@ RUN pip3 install --no-cache-dir \
     azure-mgmt-network \
     azure-mgmt-resource \
     azure-mgmt-storage \
-    azure-common \
-    -r /usr/share/ansible/collections/ansible_collections/azure/azcollection/requirements.txt
+    azure-common
 
 # Add Git credential helper for passwordless Azure DevOps repo sync via Workload Identity
 RUN printf '#!/usr/bin/env python3\nimport sys\nfrom azure.identity import DefaultAzureCredential\n\nif len(sys.argv) > 1 and sys.argv[1] == "get":\n    token = DefaultAzureCredential().get_token("499b84ac-1321-427f-aa17-267ca6975798/.default").token\n    print("username=azdo")\n    print(f"password={token}")\n' > /usr/local/bin/git-credential-azdo && \
