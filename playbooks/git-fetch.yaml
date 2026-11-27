@@ -1,0 +1,20 @@
+---
+- name: Debug ADO Managed Identity Git Auth
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Test credential helper and git ls-remote
+      ansible.builtin.shell: |
+        echo "--- ENV ---"
+        env | grep -E 'AZURE_|GIT_' || echo "NO_AZURE_VARS"
+        echo "--- GIT CONFIG ---"
+        git config --system --list | grep credential || echo "NO_CRED_HELPER"
+        echo "--- HELPER TEST ---"
+        printf "protocol=https\nhost=dev.azure.com\n\n" | /usr/local/bin/git-credential-azdo get | sed 's/password=.*/password=REDACTED/'
+      register: git_debug
+      ignore_errors: true
+
+    - name: Print full diagnostic output
+      ansible.builtin.debug:
+        var: git_debug
